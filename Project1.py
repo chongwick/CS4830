@@ -45,7 +45,7 @@ class Car:
                     self.foodPrep = self.env.timeout(self.foodPrepTime)
                     self.queue[i].release(req)
                     ORDER_NUM -= 1
-                elif i == PAYMENT_MAX-1:   #At payment window
+                elif i == ORDER_MAX + PAYMENT_MAX-1:   #At payment window
                     print('Waiting to pay::', self)
                     req = self.queue[i].request()
                     yield req
@@ -54,7 +54,7 @@ class Car:
                     yield evt
                     print('Finish paying::', self)
                     self.queue[i].release(req)
-                elif i == PICKUP_MAX-1:   #At pickup window
+                elif i == ORDER_MAX + PAYMENT_MAX + PICKUP_MAX-1:   #At pickup window
                     print('Waiting to pickup::', self)
                     req = self.queue[i].request()
                     yield req
