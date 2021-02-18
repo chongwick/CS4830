@@ -1,7 +1,9 @@
+'''Caleb Austin and Daniel Chong'''
 import random
 import simpy
 import numpy
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 PICKUP_MAX = 2 #1 at the window, 1 behind
 PAYMENT_MAX = 5 #1 at the window, 4 behind
@@ -9,10 +11,14 @@ ORDER_MAX = 8 #1 at the window, 7 behind
 
 
 SERVED = 0
+SERV_DATA = []
 LEFT = 0
+BALK_DATA = []
 SERVICETIME = 0
-RUNS = 50
-ARRIVALRATE = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+TIME_DATA = []
+RUNS = 20
+BALK_TO_SERV = []
+ARRIVALRATE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 
 class Car:
@@ -90,31 +96,35 @@ class Car:
     def __str__(self):
         return f'Car: {self.name:d} time: {self.env.now:.3f}'
 
-def arrivalGen(env, orderWindow, paymentWindow, pickupWindow):
+def arrivalGen(env, orderWindow, paymentWindow, pickupWindow, arrivalRate):
 
     while True:
 
         c = Car(env, orderWindow, paymentWindow, pickupWindow)
         env.process(c.drive())
-        evt = env.timeout(random.expovariate(1.0/10.0))
+        evt = env.timeout(random.expovariate(arrivalRate/10.0))
         yield evt
 
+for x in ARRIVALRATE:
+    for i in range(RUNS):
+        env = simpy.Environment()
 
-for i in range(RUNS):
-    env = simpy.Environment()
+        orderWindow = simpy.Resource(env, 1)
+        paymentWindow = simpy.Resource(env, 1)
+        pickupWindow = simpy.Resource(env, 1)
 
-    orderWindow = simpy.Resource(env, 1)
-    paymentWindow = simpy.Resource(env, 1)
-    pickupWindow = simpy.Resource(env, 1)
+        env.process(arrivalGen(env, orderWindow, paymentWindow, pickupWindow, x))
 
-    env.process(arrivalGen(env, orderWindow, paymentWindow, pickupWindow))
+        env.run(until = 120.0)
+    BALK_TO_SERV.append(LEFT/SERVED)
+    SERV_DATA.append(SERVED/RUNS)
+    BALK_DATA.append(LEFT/RUNS)
+    TIME_DATA.append(SERVICETIME/SERVED)
+    SERVED = 0
+    LEFT = 0
+    SERVICETIME = 0
 
-    env.run(until = 120.0)
 
-print('\nSCENARIO 1')
-print('Served:', SERVED/RUNS)
-print('Left:', LEFT/RUNS)
-print('Average service time:', SERVICETIME/SERVED)
 
 
 #Start of second scenario
@@ -124,10 +134,14 @@ ORDER_MAX = 8 #1 at the window, 7 behind
 
 
 SERVED2 = 0
+SERV_DATA2 = []
 LEFT2 = 0
+BALK_DATA2 = []
 SERVICETIME2 = 0
+TIME_DATA2 = []
+BALK_TO_SERV2 = []
 
-class Car:
+class Car2:
 
     carNumber = 0
 
@@ -137,8 +151,8 @@ class Car:
         self.orderWindow2 = orderWindow2
         self.paymentWindow = paymentWindow
         self.pickupWindow = pickupWindow
-        Car.carNumber += 1
-        self.name = Car.carNumber
+        Car2.carNumber += 1
+        self.name = Car2.carNumber
         self.orderTime = random.weibullvariate(3, 1.5)
         self.paymentTime = random.weibullvariate(2, 1.5)
         self.foodPrepTime = random.weibullvariate(6, 2.0)
@@ -218,28 +232,69 @@ class Car:
     def __str__(self):
         return f'Car: {self.name:d} time: {self.env.now:.3f}'
 
-def arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow):
+def arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow, arrivalRate):
 
     while True:
 
-        c = Car(env, orderWindow, orderWindow2, paymentWindow, pickupWindow)
+        c = Car2(env, orderWindow, orderWindow2, paymentWindow, pickupWindow)
         env.process(c.drive())
-        evt = env.timeout(random.expovariate(1.0/10.0))
+        evt = env.timeout(random.expovariate(arrivalRate/10.0))
         yield evt
 
-for i in range(RUNS):
-    env = simpy.Environment()
+for x in ARRIVALRATE:
+    for i in range(RUNS):
+        env = simpy.Environment()
 
-    orderWindow = simpy.Resource(env, 1)
-    orderWindow2 = simpy.Resource(env, 1)
-    paymentWindow = simpy.Resource(env, 1)
-    pickupWindow = simpy.Resource(env, 1)
+        orderWindow = simpy.Resource(env, 1)
+        orderWindow2 = simpy.Resource(env, 1)
+        paymentWindow = simpy.Resource(env, 1)
+        pickupWindow = simpy.Resource(env, 1)
 
-    env.process(arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow))
+        env.process(arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow, x))
 
-    env.run(until = 120.0)
+        env.run(until = 120.0)
 
-print('\nSCENARIO 1:')
-print('Served', SERVED/RUNS, 'Left:', LEFT/RUNS, 'Time:', SERVICETIME/SERVED)
-print('\nSCENARIO 2:')
-print('Served:', SERVED2/RUNS, 'Left:', LEFT2/RUNS, 'Time:', SERVICETIME2/SERVED2)
+    SERV_DATA2.append(SERVED2/RUNS)
+    BALK_DATA2.append(LEFT2/RUNS)
+    TIME_DATA2.append(SERVICETIME2/SERVED2)
+    BALK_TO_SERV2.append(LEFT2/SERVED2)
+    SERVED2 = 0
+    LEFT2 = 0
+    SERVICETIME2 = 0
+
+#Create plot for Number of people served in comparison to differing arrival rates
+plt.plot(ARRIVALRATE, SERV_DATA, label = "Scenario 1")
+plt.plot(ARRIVALRATE, SERV_DATA2, label = "Scenario 2")
+blue_line = mpatches.Patch(color='blue', label='Scenario 1')
+orange_line = mpatches.Patch(color='orange', label='Scenario 2')
+plt.legend(handles=[blue_line])
+plt.legend(handles=[orange_line])
+plt.title('People Served/Arrival rate')
+plt.xlabel('Arrival Rate')
+plt.ylabel('People Served')
+plt.show()
+
+plt.plot(ARRIVALRATE, BALK_DATA, label = "Scenario 1")
+plt.plot(ARRIVALRATE, BALK_DATA2, label = "Scenario 2")
+plt.title('Balks/Arrival rate')
+plt.xlabel('Arrival Rate')
+plt.ylabel('Balks')
+plt.show()
+
+plt.plot(ARRIVALRATE, TIME_DATA, label = "Scenario 1")
+plt.plot(ARRIVALRATE, TIME_DATA2, label = "Scenario 2")
+plt.title('Service Time/Arrival rate')
+plt.xlabel('Arrival Rate')
+plt.ylabel('Service Time')
+plt.show()
+
+plt.plot(ARRIVALRATE, BALK_TO_SERV, label = "Scenario 1")
+plt.plot(ARRIVALRATE, BALK_TO_SERV2, label = "Scenario 2")
+plt.title('(Balked/Served)/Arrival rate')
+plt.xlabel('Served/Balked')
+plt.ylabel('Service Time')
+plt.show()
+
+
+print(SERV_DATA2, BALK_DATA2, TIME_DATA2)
+print(SERV_DATA, BALK_DATA, TIME_DATA)
