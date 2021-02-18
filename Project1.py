@@ -1,16 +1,17 @@
 import random
 import simpy
+import numpy
+import matplotlib.pyplot as plt
 
 PICKUP_MAX = 2 #1 at the window, 1 behind
 PAYMENT_MAX = 5 #1 at the window, 4 behind
 ORDER_MAX = 8 #1 at the window, 7 behind
 
-PICKUP_QUEUE = []
-PAYMENT_QUEUE = []
-ORDER_QUEUE = []
 
 SERVED = 0
 LEFT = 0
+SERVICETIME = 0
+RUNS = 50
 
 class Car:
 
@@ -28,10 +29,11 @@ class Car:
         self.foodPrepTime = random.weibullvariate(6, 2.0)
         self.pickupTime = random.weibullvariate(2, 1.5)
         self.foodPrep = self.env.timeout(self.foodPrepTime)
+        self.totalTime = 0
 
 
     def drive(self):
-        global SERVED, LEFT
+        global SERVED, LEFT, SERVICETIME
 
         if len(self.orderWindow.queue) < 8:
             self.arrivalTime = self.env.now
@@ -75,6 +77,8 @@ class Car:
                 print('oops')
             self.pickupWindow.release(req)
             SERVED += 1
+            self.totalTime = self.env.now - self.arrivalTime
+            SERVICETIME += self.totalTime
 
         else:
             print('Left::', self, len(self.orderWindow.queue))
@@ -90,23 +94,25 @@ def arrivalGen(env, orderWindow, paymentWindow, pickupWindow):
 
         c = Car(env, orderWindow, paymentWindow, pickupWindow)
         env.process(c.drive())
-        evt = env.timeout(random.expovariate(10.0/10.0))
+        evt = env.timeout(random.expovariate(1.0/10.0))
         yield evt
 
 
-env = simpy.Environment()
+for i in range(RUNS):
+    env = simpy.Environment()
 
-orderWindow = simpy.Resource(env, 1)
-paymentWindow = simpy.Resource(env, 1)
-pickupWindow = simpy.Resource(env, 1)
+    orderWindow = simpy.Resource(env, 1)
+    paymentWindow = simpy.Resource(env, 1)
+    pickupWindow = simpy.Resource(env, 1)
 
-env.process(arrivalGen(env, orderWindow, paymentWindow, pickupWindow))
+    env.process(arrivalGen(env, orderWindow, paymentWindow, pickupWindow))
 
-env.run(until = 120.0)
+    env.run(until = 120.0)
 
 print('\nSCENARIO 1')
-print('Served:', SERVED)
-print('Left:', LEFT, '\n')
+print('Served:', SERVED/RUNS)
+print('Left:', LEFT/RUNS)
+print('Average service time:', SERVICETIME/SERVED)
 
 
 #Start of second scenario
@@ -114,12 +120,10 @@ PICKUP_MAX = 2 #1 at the window, 1 behind
 PAYMENT_MAX = 5 #1 at the window, 4 behind
 ORDER_MAX = 8 #1 at the window, 7 behind
 
-PICKUP_QUEUE = []
-PAYMENT_QUEUE = []
-ORDER_QUEUE = []
 
 SERVED2 = 0
 LEFT2 = 0
+SERVICETIME2 = 0
 
 class Car:
 
@@ -139,10 +143,11 @@ class Car:
         self.pickupTime = random.weibullvariate(2, 1.5)
         self.foodPrep = self.env.timeout(self.foodPrepTime)
         self.order = 0
+        self.totalTime = 0
 
 
     def drive(self):
-        global SERVED2, LEFT2
+        global SERVED2, LEFT2, SERVICETIME2
         if len(self.orderWindow.queue) + len(self.orderWindow2.queue) < 8:
             if len(self.orderWindow.queue) <= len(self.orderWindow2.queue):
                 self.order = 1
@@ -200,6 +205,8 @@ class Car:
                 print('oops')
             self.pickupWindow.release(req)
             SERVED2 += 1
+            self.totalTime = self.env.now - self.arrivalTime
+            SERVICETIME2 += self.totalTime
 
         else:
             print('Left::', self, len(self.orderWindow.queue))
@@ -215,22 +222,22 @@ def arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow):
 
         c = Car(env, orderWindow, orderWindow2, paymentWindow, pickupWindow)
         env.process(c.drive())
-        evt = env.timeout(random.expovariate(10.0/10.0))
+        evt = env.timeout(random.expovariate(1.0/10.0))
         yield evt
 
+for i in range(RUNS):
+    env = simpy.Environment()
 
-env = simpy.Environment()
+    orderWindow = simpy.Resource(env, 1)
+    orderWindow2 = simpy.Resource(env, 1)
+    paymentWindow = simpy.Resource(env, 1)
+    pickupWindow = simpy.Resource(env, 1)
 
-orderWindow = simpy.Resource(env, 1)
-orderWindow2 = simpy.Resource(env, 1)
-paymentWindow = simpy.Resource(env, 1)
-pickupWindow = simpy.Resource(env, 1)
+    env.process(arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow))
 
-env.process(arrivalGen(env, orderWindow, orderWindow2, paymentWindow, pickupWindow))
-
-env.run(until = 120.0)
+    env.run(until = 120.0)
 
 print('\nSCENARIO 1:')
-print('Served', SERVED, 'Left:', LEFT)
+print('Served', SERVED/RUNS, 'Left:', LEFT/RUNS, 'Time:', SERVICETIME/SERVED)
 print('\nSCENARIO 2:')
-print('Served:', SERVED2, 'Left:', LEFT2)
+print('Served:', SERVED2/RUNS, 'Left:', LEFT2/RUNS, 'Time:', SERVICETIME2/SERVED2)
