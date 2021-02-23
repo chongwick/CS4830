@@ -298,3 +298,21 @@ plt.show()
 
 print(SERV_DATA2, BALK_DATA2, TIME_DATA2)
 print(SERV_DATA, BALK_DATA, TIME_DATA)
+
+#total = 0
+#for i in SERV_DATA:
+#    total += i
+#print(total/20)
+#total = 0
+#for i in SERV_DATA2:
+#    total += i
+#print(total/20)
+#
+#total = 0
+#for i in BALK_DATA:
+#    total += i
+#print(total/20)
+#total = 0
+#for i in BALK_DATA2:
+#    total += i
+#print(total/20)
