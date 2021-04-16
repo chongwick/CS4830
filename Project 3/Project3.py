@@ -27,7 +27,7 @@ class PredatorPrey(dynamics.Dynamics):
         # set state variable initial values
         self.q[0] = preyWeight
         self.q[1] = predWeight
-        #self.q[2] = pesWeight
+        self.q[2] = pesWeight
         # initialize state history used for plotting
         self.Q = [[self.q[i]] for i in range(len(self.q))]
         self.T = [0.0]
@@ -84,11 +84,11 @@ class PredatorPrey(dynamics.Dynamics):
 # set parameters for predator-prey simulation
 
 # parameters describing the simulation time
-endTime = 1000.0       # length of simulation (i.e. end time)
+endTime = 500.0       # length of simulation (i.e. end time)
 dt = 0.005             # time step size used to update state equations
 
 # parameters describing the real system
-preyBirth = 0.05 #Beta g
+preyBirth = 0.1 #Beta g
 preyDeath = 0.001 #Delta g
 predBirth = 0.0005 #Beta i
 predDeath = 0.01 #Delta i
