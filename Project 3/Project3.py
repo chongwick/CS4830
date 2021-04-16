@@ -37,8 +37,11 @@ class PredatorPrey(dynamics.Dynamics):
         for i in range(count):
             self.dq[0] = (self.preyInc * self.q[0]) - (self.preyDec * self.q[0] * self.q[1]) - (
                     self.q[2]/100000 * self.q[0])
+
+            pes_potency = 1
+
             self.dq[1] = (self.predInc * self.q[0] * self.q[1]) - (self.predDec * self.q[1]) - (
-                    self.q[2]/50 * self.q[1])
+                    self.q[2]/100 * pes_potency * self.q[1])
 
             #Pesticide equation
             decay = 4/self.endTime #Pesticide decay rate
@@ -95,7 +98,7 @@ predDeath = 0.01 #Delta i
 initPreyWt = 150.0 #G(0)
 initPredWt = 50.0 #I(0)
 #Pesticide parameters
-initPesWt = 50.0
+initPesWt = 100.0
 
 # create the simulation and initialize state variables
 P = PredatorPrey(preyBirth, preyDeath, predBirth, predDeath, dt, initPesWt, endTime)
